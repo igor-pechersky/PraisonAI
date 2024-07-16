@@ -60,6 +60,12 @@ class PraisonAI:
         self.auto = auto
         self.init = init
 
+    def run(self):
+        """
+        Run the PraisonAI application.
+        """
+        self.main()
+
     def main(self):
         """
         The main function of the PraisonAI object. It parses the command-line arguments,
@@ -87,6 +93,10 @@ class PraisonAI:
         
         if getattr(args, 'chat', False):
             self.create_chainlit_chat_interface()
+            return
+        
+        if getattr(args, 'code', False):
+            self.create_code_interface()
             return
         
         invocation_cmd = "praisonai"
@@ -171,6 +181,9 @@ class PraisonAI:
         if args.agent_file == 'chat':
             args.ui = 'chainlit'
             args.chat = True
+        if args.agent_file == 'code':
+            args.ui = 'chainlit'
+            args.code = True
 
         return args
     
@@ -188,10 +201,47 @@ class PraisonAI:
         if CHAINLIT_AVAILABLE:
             import praisonai
             os.environ["CHAINLIT_PORT"] = "8084"
+            public_folder = os.path.join(os.path.dirname(praisonai.__file__), 'public')
+            if not os.path.exists("public"):  # Check if the folder exists in the current directory
+                if os.path.exists(public_folder):
+                    shutil.copytree(public_folder, 'public', dirs_exist_ok=True)
+                    logging.info("Public folder copied successfully!")
+                else:
+                    logging.info("Public folder not found in the package.")
+            else:
+                logging.info("Public folder already exists.")
             chat_ui_path = os.path.join(os.path.dirname(praisonai.__file__), 'ui', 'chat.py')
             chainlit_run([chat_ui_path])
         else:
             print("ERROR: Chat UI is not installed. Please install it with 'pip install \"praisonai\[chat]\"' to use the chat UI.")
+            
+    def create_code_interface(self):
+        """
+        Create a Chainlit interface for the code application.
+
+        This function sets up a Chainlit application that listens for messages.
+        When a message is received, it runs PraisonAI with the provided message as the topic.
+        The generated agents are then used to perform tasks.
+
+        Returns:
+            None: This function does not return any value. It starts the Chainlit application.
+        """
+        if CHAINLIT_AVAILABLE:
+            import praisonai
+            os.environ["CHAINLIT_PORT"] = "8086"
+            public_folder = os.path.join(os.path.dirname(praisonai.__file__), 'public')
+            if not os.path.exists("public"):  # Check if the folder exists in the current directory
+                if os.path.exists(public_folder):
+                    shutil.copytree(public_folder, 'public', dirs_exist_ok=True)
+                    logging.info("Public folder copied successfully!")
+                else:
+                    logging.info("Public folder not found in the package.")
+            else:
+                logging.info("Public folder already exists.")
+            code_ui_path = os.path.join(os.path.dirname(praisonai.__file__), 'ui', 'code.py')
+            chainlit_run([code_ui_path])
+        else:
+            print("ERROR: Code UI is not installed. Please install it with 'pip install \"praisonai\[code]\"' to use the code UI.")
 
     def create_gradio_interface(self):
         """

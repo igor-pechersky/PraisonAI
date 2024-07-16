@@ -14,6 +14,7 @@ from literalai.helper import utc_now
 import logging
 import json
 from sql_alchemy import SQLAlchemyDataLayer
+from context import ContextGatherer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -194,6 +195,12 @@ async def start():
     )
     cl.user_session.set("settings", settings)
     await settings.send()
+    gatherer = ContextGatherer()
+    context, token_count, context_tree = gatherer.run()
+    msg = cl.Message(content="""Token Count: {token_count},
+                                 Files include: \n```bash\n{context_tree}\n"""
+                                 .format(token_count=token_count, context_tree=context_tree))
+    await msg.send()
 
 @cl.on_settings_update
 async def setup_agent(settings):
@@ -224,13 +231,20 @@ async def main(message: cl.Message):
     model_name = load_setting("model_name") or os.getenv("MODEL_NAME") or "gpt-3.5-turbo"
     message_history = cl.user_session.get("message_history", [])
     message_history.append({"role": "user", "content": message.content})
+    gatherer = ContextGatherer()
+    context, token_count, context_tree = gatherer.run()
+    prompt_history = message_history
+    prompt_history.append({"role": "user", "content": """
+                           Answer the question:\n{question}.\n\n
+                           Below is the Context:\n{context}\n\n"""
+                           .format(context=context, question=message.content)})
 
     msg = cl.Message(content="")
     await msg.send()
 
     response = await acompletion(
         model=model_name,
-        messages=message_history,
+        messages=prompt_history,
         stream=True,
         # temperature=0.7,
         # max_tokens=500,
