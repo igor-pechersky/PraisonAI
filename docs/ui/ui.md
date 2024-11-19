@@ -1,15 +1,16 @@
 # PraisonAI User Interface (UI)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tg-ZjNl3OCg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Different User Interfaces:
 
 | Interface | Description | URL |
 |---|---|---|
-| **UI** | Multi Agents such as CrewAI or AutoGen | [https://docs.praisonai.com/ui/ui](https://docs.praison.ai/ui/ui) |
-| **Chat** | Chat with 100+ LLMs, single AI Agent | [https://docs.praisonai.com/ui/chat](https://docs.praison.ai/ui/chat) |
-| **Code** | Chat with entire Codebase, single AI Agent | [https://docs.praisonai.com/ui/code](https://docs.praison.ai/ui/code) |
+| **UI** | Multi Agents such as CrewAI or AutoGen | [https://docs.praison.ai/ui/ui](https://docs.praison.ai/ui/ui) |
+| **Chat** | Chat with 100+ LLMs, single AI Agent | [https://docs.praison.ai/ui/chat](https://docs.praison.ai/ui/chat) |
+| **Code** | Chat with entire Codebase, single AI Agent | [https://docs.praison.ai/ui/code](https://docs.praison.ai/ui/code) |
 
-## Chainlit
-```bash
+## Chainlit```bash
 pip install -U "praisonai[ui]"
 export OPENAI_API_KEY="Enter your API key"
 chainlit create-secret
@@ -89,3 +90,7 @@ streamlit run app.py
 
 ### Manual Model Output
 ![Manual Model Output](../images/ui-step-11.png)
+
+## PraisonAI Call
+
+To use the PraisonAI Call feature:

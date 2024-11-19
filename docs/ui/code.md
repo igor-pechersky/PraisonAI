@@ -1,6 +1,31 @@
 # PraisonAI Code
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_5jQayO-MQY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 PraisonAI Code helps you to interact with your whole codebase using the power of AI.
+
+## Different User Interfaces:
+
+| Interface | Description | URL |
+|---|---|---|
+| **UI** | Multi Agents such as CrewAI or AutoGen | [https://docs.praison.ai/ui/ui](https://docs.praison.ai/ui/ui) |
+| **Chat** | Chat with 100+ LLMs, single AI Agent | [https://docs.praison.ai/ui/chat](https://docs.praison.ai/ui/chat) |
+| **Code** | Chat with entire Codebase, single AI Agent | [https://docs.praison.ai/ui/code](https://docs.praison.ai/ui/code) |
+
+## Table of Contents
+
+- [Install PraisonAI Code](#install-praisonai-code)
+- [Other Models](#other-models)
+- [To Use Gemini 1.5](#to-use-gemini-15)
+- [Ignore Files](#ignore-files)
+  - [Using .praisonignore](#using-praisonignore)
+  - [Using settings.yaml](#using-settingsyaml)
+  - [Using .env File](#using-env-file)
+  - [Using Environment Variables in the Terminal](#using-environment-variables-in-the-terminal)
+- [Include Files](#include-files-praisoninclude)
+- [Set Max Tokens](#set-max-tokens)
+
+## Install PraisonAI Code
 
 1. 
 ```bash
@@ -19,12 +44,12 @@ praisonai code
 
 4. Username and Password will be asked for the first time. `admin` is the default username and password.
 
-5. Set Model name to be gpt-3.5-turbo in the settings 
+5. Set Model name to be gpt-4o-mini in the settings 
 
 
 ## Other Models
 
-* Use 100+ LLMs
+* Use 100+ LLMs - [Litellm](https://litellm.vercel.app/docs/providers)
 * Includes Gemini 1.5 for 2 Million Context Length
 
 ## To Use Gemini 1.5
@@ -35,9 +60,29 @@ praisonai code
 
 ## Ignore Files
 
-### Using settings.yaml
+### Using .praisonignore
 
-* Create a settings.yaml file in the root folder of the project
+* Create a `.praisonignore` file in the root folder of the project
+* Add files to ignore
+
+```bash
+.*
+*.pyc
+pycache
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+.lock
+.pyc
+.env
+```
+
+### Using settings.yaml 
+(.praisonignore is preferred)
+
+* Create a `settings.yaml` file in the root folder of the project
 * Add below Variables and required Ignore Files
 
 ```yaml
@@ -58,25 +103,51 @@ code:
 
 ### Using .env File
 
-* Create a .env file in the root folder of the project
+* Create a `.env` file in the root folder of the project
 * Add below Variables and required Ignore Files
 
 ```bash
-PRAISONAI_IGNORE_FILES=".*,*.pyc,__pycache__,.git,.gitignore,.vscode,.idea,.DS_Store,*.lock,.env,docs,tests,test,tmp,temp,*.txt,*.md,*.json,*.csv,*.tsv,public,*.sql,*.sqlite,*.db,*.db3,*.sqlite3,*.log,*.zip,*.gz,*.tar,*.rar,*.7z,*.pdf,*.jpg,*.jpeg,*.png,*.gif,*.svg,cookbooks,assets,dist,build,node_modules,venv,crewAI,.cache,*.__pycache__,*chroma.sqlite3,test/,dist/,praisonAI.egg-info,test.yaml,db,praisonai_prompt.txt,watch.sh,docs.sh,other,output,*.chainlit,.files,site,flagged,*public,threads.db,trained_agents_data.pkl,.pytest_cache"
+PRAISONAI_IGNORE_FILES=".*,*.pyc,__pycache__,.git,.gitignore,.vscode"
 ```
 
 ### Using Environment Variables in the Terminal
 
 ```bash
-export PRAISONAI_IGNORE_FILES=".*,*.pyc,__pycache__,.git,.gitignore,.vscode,.idea,.DS_Store,*.lock,.env,docs,tests,test,tmp,temp,*.txt,*.md,*.json,*.csv,*.tsv,public,*.sql,*.sqlite,*.db,*.db3,*.sqlite3,*.log,*.zip,*.gz,*.tar,*.rar,*.7z,*.pdf,*.jpg,*.jpeg,*.png,*.gif,*.svg,cookbooks,assets,dist,build,node_modules,venv,crewAI,.cache,*.__pycache__,*chroma.sqlite3,test/,dist/,praisonAI.egg-info,test.yaml,db,praisonai_prompt.txt,watch.sh,docs.sh,other,output,*.chainlit,.files,site,flagged,*public,threads.db,trained_agents_data.pkl,.pytest_cache"
+export PRAISONAI_IGNORE_FILES=".*,*.pyc,__pycache__,.git,.gitignore,.vscode"
+```
+
+## Include Files .praisoninclude
+
+- Add files you wish to Include files in the context
+- This will include the files/folders mentioned in `.praisoninclude` to the original context (files in the folder - .gitignore  - .praisonignore)
+
+* Create a `.praisoninclude` file in the root folder of the project
+* Add files to Include
+
+```bash
+projectfiles
+docs
+```
+
+## Include ONLY these Files .praisoncontext (Context)
+
+- Add files you wish to Include files in the context
+- This will include ONLY the files/folders mentioned in `.praisoncontext` to the context
+
+* Create a `.praisoncontext` file in the root folder of the project
+* Add files to Include
+
+```bash
+projectfiles
+docs
 ```
 
 ## Set Max Tokens
 
-Note: By Default Max Tokens set is 128,000
+Note: By Default Max Tokens set is 900,000
 
 ```bash
-export PRAISONAI_MAX_TOKENS=200000
+export PRAISONAI_MAX_TOKENS=1000000
 ```
 
 or 
@@ -84,5 +155,31 @@ or
 * Create a .env file in the root folder of the project
 * Add below Variables and required Max Tokens
 * ```
-  PRAISONAI_MAX_TOKENS=200000
+  PRAISONAI_MAX_TOKENS=1000000
   ```
+
+## Default DB Location
+
+`~/.praison/database.sqlite`
+
+## Key Features
+
+### Internet Search
+
+PraisonAI Code now includes internet search capabilities using Crawl4AI and Tavily. This feature allows you to retrieve up-to-date information and code snippets during your coding sessions, enhancing your ability to find relevant programming information and examples.
+
+To use this feature:
+1. Ask a question or request information about a specific coding topic
+2. The AI will use internet search to find the most relevant and current information
+3. You'll receive code snippets, documentation references, or explanations based on the latest available resources
+
+### Vision Language Model (VLM) Support
+
+While primarily designed for code interactions, PraisonAI Code also supports Vision Language Model capabilities. This feature can be particularly useful when dealing with visual aspects of programming, such as UI design, data visualization, or understanding code structure through diagrams.
+
+To use this feature:
+1. Upload an image related to your coding query (e.g., a screenshot of a UI, a flowchart, or a code snippet image)
+2. Ask questions or request analysis based on the uploaded image
+3. The VLM will process the image and provide insights or answers based on its visual content, helping you understand or implement the visual concepts in your code
+
+These new features significantly expand the capabilities of PraisonAI Code, allowing for more comprehensive and up-to-date coding assistance.
