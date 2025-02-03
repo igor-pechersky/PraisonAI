@@ -1,0 +1,359 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "PraisonAI Documentation",
+  "logo": {
+    "light": "/images/praisonai-logo-large-dark.png",
+    "dark": "/images/praisonai-logo-large-light.png",
+    "href": "/"
+  },
+  "layout": "sidenav",
+  "favicon": "/images/praisonai-android-chrome-192x192.png",
+  "sidebar": {
+    "items": "border"
+  },
+  "colors": {
+    "primary": "#0069ED",
+    "light": "#4D9CFF",
+    "dark": "#0050B4"
+  },
+  "api": {
+    "auth": {
+      "method": "bearer"
+    }
+  },
+  "background": {
+    "style": "windows"
+  },
+  "mobileBreakpoint": 768,
+  "viewport": {
+    "width": "device-width",
+    "initialScale": 1,
+    "maximumScale": 1,
+    "userScalable": false
+  },
+  "topbarLinks": [
+    {
+      "name": "Community",
+      "url": "https://github.com/MervinPraison/PraisonAI/discussions"
+    }
+  ],
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/MervinPraison/PraisonAI"
+  },
+  "codeBlock": {
+    "mode": "auto"
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
+  },
+  "redirects": [
+    {
+      "source": "/index",
+      "destination": "/"
+    }
+  ],
+  "tabs": [
+    {
+        "name": "Documentation",
+        "url": "/index"
+    },
+    {
+        "name": "Examples",
+        "url": "/examples"
+    },
+    {
+        "name": "Agents",
+        "url": "/agents"
+    },
+    {
+        "name": "UI",
+        "url": "/ui"
+    },
+    {
+        "name": "Tools",
+        "url": "/tools"
+    },
+    {
+        "name": "JS",
+        "url": "/js"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "",
+      "pages": ["index"]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "installation",
+        "quickstart"
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/agents",
+        "concepts/tasks",
+        "concepts/process",
+        "concepts/tools",
+        "concepts/memory",
+        "concepts/knowledge"
+      ]
+    },
+    {
+      "group": "Workflows",
+      "pages": [
+        "features/routing",
+        "features/orchestrator-worker",
+        "features/autonomous-workflow",
+        "features/parallelisation",
+        "features/promptchaining",
+        "features/evaluator-optimiser",
+        "features/repetitive"
+      ]
+    },
+    {
+      "group": "Features",
+      "pages": [
+        "features/cli",
+        "features/autoagents",
+        "features/image-generation",
+        "features/selfreflection",
+        "features/rag",
+        "features/reasoning-extract",
+        "features/reasoning",
+        "features/multimodal",
+        "features/langchain",
+        "features/async",
+        "features/mini",
+        "features/generate-reasoning",
+        "features/codeagent",
+        "features/mathagent",
+        "features/structured",
+        "features/callbacks",
+        "features/chat-with-pdf"
+      ]
+    },
+    {
+      "group": "Models",
+      "pages": [
+        "models",
+        "models/openai",
+        "models/ollama",
+        "models/groq",
+        "models/google",
+        "models/openrouter",
+        "models/anthropic",
+        "models/cohere",
+        "models/mistral",
+        "models/deepseek",
+        "models/other"
+      ]
+    },
+    {
+      "group": "Examples",
+      "pages": [
+        "examples/examples",
+        "examples/code-analysis",
+        "examples/hackathon-judge",
+        "examples/predictive-maintenance",
+        "examples/emergency-response",
+        "examples/code-review",
+        "examples/fraud-detection",
+        "examples/supply-chain",
+        "examples/healthcare-diagnosis",
+        "examples/customer-service",
+        "examples/smart-city",
+        "examples/multilingual-content",
+        "examples/adaptive-learning",
+        "examples/crypto-validator",
+        "examples/space-mission",
+        "examples/neural-architecture",
+        "examples/defi-market-maker",
+        "examples/medicine-protocol",
+        "examples/climate-impact",
+        "examples/vulnerability-detection",
+        "examples/research-assistant",
+        "examples/quantum-optimiser"
+      ]
+    },
+    {
+      "group": "Agents",
+      "pages": [
+        "agents/agents",
+        "agents/data-analyst",
+        "agents/finance",
+        "agents/image",
+        "agents/image-to-text",
+        "agents/markdown",
+        "agents/planning",
+        "agents/programming",
+        "agents/shopping",
+        "agents/single",
+        "agents/video",
+        "agents/websearch",
+        "agents/wikipedia",
+        "agents/research",
+        "agents/recommendation"
+      ]
+    },
+    {
+      "group": "Tools",
+      "pages": [
+        "tools/tools",
+        "tools/langchain_tools",
+        "tools/duckduckgo_tools",
+        "tools/arxiv_tools",
+        "tools/calculator_tools",
+        "tools/csv_tools",
+        "tools/duckdb_tools",
+        "tools/excel_tools",
+        "tools/file_tools",
+        "tools/json_tools",
+        "tools/newspaper_tools",
+        "tools/pandas_tools",
+        "tools/python_tools",
+        "tools/shell_tools",
+        "tools/spider_tools",
+        "tools/wikipedia_tools",
+        "tools/xml_tools",
+        "tools/yaml_tools",
+        "tools/yfinance_tools",
+        "tools/custom",
+        "tools/tools_class",
+        "tools/gpt",
+        "tools/duckduckgo",
+        "tools/langchain",
+        "firecrawl",
+        "tools/wikipedia",
+        "tools/youtube",
+        "tools/tavily",
+        "tools/reddit",
+        "tools/you.com",
+        "tools/crawl4ai",
+        "tools/mem0",
+        "tools/composio",
+        "tools/googlecalendar"
+      ]
+    },
+    {
+      "group": "JavaScript",
+      "pages": [
+        "js/js",
+        "js/typescript",
+        "js/nodejs",
+        "js/typescript-async",
+        "js/development"
+      ]
+    },
+    {
+      "group": "Other Features",
+      "pages": [
+        "train",
+        "framework/crewai",
+        "framework/autogen",
+        "framework/praisonaiagents"
+      ]
+    },
+    {
+      "group": "User Interface",
+      "pages": [
+        "ui/overview",
+        "ui/gradio",
+        {
+          "group": "Streamlit",
+          "icon": "pen-paintbrush",
+          "pages": [
+            "ui/streamlit",
+            "ui/streamlit/code-analysis-streamlit",
+            "ui/streamlit/hackathon-judge-streamlit",
+            "ui/streamlit/ollama-streamlit",
+            "ui/streamlit/deepseek-streamlit",
+            "ui/streamlit/gemini-streamlit"
+          ]
+        },
+        "ui/ui",
+        "ui/chat",
+        "ui/code"
+      ]
+    },
+    {
+      "group": "Monitoring",
+      "pages": ["monitoring/agentops"]
+    },
+    {
+      "group": "Developers",
+      "pages": [
+        "developers/test",
+        "developers/agents-playbook",
+        "developers/wrapper",
+        "developers/wrapper-tools",
+        "developers/googlecolab",
+        "developers/googlecolab-tools",
+        "developers/local-development",
+        "deploy"
+      ]
+    },
+    {
+      "group": "Getting Started (No Code)",
+      "pages": [
+        "nocode/introduction",
+        "nocode/tldr",
+        "nocode/installation",
+        "nocode/initialise",
+        "nocode/run",
+        "nocode/auto"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/praisonaiagents/index",
+        "api/praisonaiagents/agent/agent",
+        "api/praisonaiagents/agents/agents",
+        "api/praisonaiagents/agents/autoagents",
+        "api/praisonaiagents/task/task",
+        "api/praisonaiagents/process/process"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/MervinPraison/PraisonAI",
+    "x": "https://x.com/MervinPraison",
+    "youtube": "https://youtube.com/@MervinPraison"
+  },
+  "footer": {
+    "links": [
+      {
+        "title": "Resources",
+        "links": [
+          {
+            "label": "GitHub",
+            "url": "https://github.com/MervinPraison/PraisonAI"
+          },
+          {
+            "label": "Documentation",
+            "url": "https://docs.praisonai.com"
+          }
+        ]
+      },
+      {
+        "title": "Community",
+        "links": [
+          {
+            "label": "Discussions",
+            "url": "https://github.com/MervinPraison/PraisonAI/discussions"
+          },
+          {
+            "label": "Twitter",
+            "url": "https://x.com/MervinPraison"
+          }
+        ]
+      }
+    ]
+  }
+}

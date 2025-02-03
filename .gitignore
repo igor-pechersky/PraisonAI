@@ -20,10 +20,12 @@ docs.sh
 other
 output
 
-.chainlit
 .files
 threads.db
 threads.db-journal
+
+.chainlit
+!praisonai/ui/config/.chainlit
 
 site
 # Ignore Sphinx build directory
@@ -58,3 +60,10 @@ credentials.json
 
 # node_modules
 node_modules
+
+outputs
+agents/praisonaiagents/build
+agents/praisonaiagents/dist
+agents/praisonaiagents/praisonaiagents.egg-info
+.codegpt
+.praison

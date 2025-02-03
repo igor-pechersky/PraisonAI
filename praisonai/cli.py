@@ -24,9 +24,19 @@ GRADIO_AVAILABLE = False
 CALL_MODULE_AVAILABLE = False
 CREWAI_AVAILABLE = False
 AUTOGEN_AVAILABLE = False
+PRAISONAI_AVAILABLE = False
 
 try:
-    os.environ["CHAINLIT_APP_ROOT"] = os.path.join(os.path.expanduser("~"), ".praison")
+    # Create necessary directories and set CHAINLIT_APP_ROOT
+    if "CHAINLIT_APP_ROOT" not in os.environ:
+        chainlit_root = os.path.join(os.path.expanduser("~"), ".praison")
+        os.environ["CHAINLIT_APP_ROOT"] = chainlit_root
+    else:
+        chainlit_root = os.environ["CHAINLIT_APP_ROOT"]
+        
+    os.makedirs(chainlit_root, exist_ok=True)
+    os.makedirs(os.path.join(chainlit_root, ".files"), exist_ok=True)
+    
     from chainlit.cli import chainlit_run
     CHAINLIT_AVAILABLE = True
 except ImportError:
@@ -56,7 +66,19 @@ try:
 except ImportError:
     pass
 
+try:
+    from praisonaiagents import Agent as PraisonAgent, Task as PraisonTask, PraisonAIAgents
+    PRAISONAI_AVAILABLE = True
+except ImportError:
+    pass
+
 logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO'), format='%(asctime)s - %(levelname)s - %(message)s')
+logging.getLogger('alembic').setLevel(logging.ERROR)
+logging.getLogger('gradio').setLevel(logging.ERROR)
+logging.getLogger('gradio').setLevel(os.environ.get('GRADIO_LOGLEVEL', 'WARNING'))
+logging.getLogger('rust_logger').setLevel(logging.WARNING)
+logging.getLogger('duckduckgo').setLevel(logging.ERROR)
+logging.getLogger('_client').setLevel(logging.ERROR)
 
 def stream_subprocess(command, env=None):
     """
@@ -118,6 +140,8 @@ class PraisonAI:
         provided arguments.
         """
         args = self.parse_args()
+        # Store args for use in handle_direct_prompt
+        self.args = args
         invocation_cmd = "praisonai"
         version_string = f"PraisonAI version {__version__}"
 
@@ -126,8 +150,16 @@ class PraisonAI:
         if args.command:
             if args.command.startswith("tests.test"):  # Argument used for testing purposes
                 print("test")
+                return "test"
             else:
                 self.agent_file = args.command
+        elif hasattr(args, 'direct_prompt') and args.direct_prompt:
+            result = self.handle_direct_prompt(args.direct_prompt)
+            print(result)
+            return result
+        else:
+            # Default to agents.yaml if no command provided
+            self.agent_file = "agents.yaml"
 
         if args.deploy:
             from .deploy import CloudDeployer
@@ -263,14 +295,18 @@ class PraisonAI:
         """
         Parse the command-line arguments for the PraisonAI CLI.
         """
+        # Define special commands
+        special_commands = ['chat', 'code', 'call', 'realtime', 'train', 'ui']
+        
         parser = argparse.ArgumentParser(prog="praisonai", description="praisonAI command-line interface")
-        parser.add_argument("--framework", choices=["crewai", "autogen"], help="Specify the framework")
+        parser.add_argument("--framework", choices=["crewai", "autogen", "praisonai"], help="Specify the framework")
         parser.add_argument("--ui", choices=["chainlit", "gradio"], help="Specify the UI framework (gradio or chainlit).")
         parser.add_argument("--auto", nargs=argparse.REMAINDER, help="Enable auto mode and pass arguments for it")
         parser.add_argument("--init", nargs=argparse.REMAINDER, help="Initialize agents with optional topic")
-        parser.add_argument("command", nargs="?", help="Command to run")
+        parser.add_argument("command", nargs="?", help="Command to run or direct prompt")
         parser.add_argument("--deploy", action="store_true", help="Deploy the application")
         parser.add_argument("--model", type=str, help="Model name")
+        parser.add_argument("--llm", type=str, help="LLM model to use for direct prompts")
         parser.add_argument("--hf", type=str, help="Hugging Face model name")
         parser.add_argument("--ollama", type=str, help="Ollama model name")
         parser.add_argument("--dataset", type=str, help="Dataset name for training", default="yahma/alpaca-cleaned")
@@ -279,6 +315,7 @@ class PraisonAI:
         parser.add_argument("--public", action="store_true", help="Use ngrok to expose the server publicly (only with --call)")
         args, unknown_args = parser.parse_known_args()
 
+        # Handle special cases first
         if unknown_args and unknown_args[0] == '-b' and unknown_args[1] == 'api:app':
             args.command = 'agents.yaml'
         if args.command == 'api:app' or args.command == '/app/api:app':
@@ -309,9 +346,7 @@ class PraisonAI:
             call_module.main(call_args)
             sys.exit(0)
 
-        # Handle special commands first
-        special_commands = ['chat', 'code', 'call', 'realtime', 'train', 'ui']
-
+        # Handle special commands
         if args.command in special_commands:
             if args.command == 'chat':
                 if not CHAINLIT_AVAILABLE:
@@ -359,7 +394,7 @@ class PraisonAI:
 
             elif args.command == 'train':
                 print("[red]ERROR: Train feature is not installed. Install with:[/red]")
-                print("\npip install \"praisonai[train]\"\n")
+                print("\npip install \"praisonai\[train]\"\n")
                 sys.exit(1)
 
             elif args.command == 'ui':
@@ -372,14 +407,85 @@ class PraisonAI:
 
         # Only check framework availability for agent-related operations
         if not args.command and (args.init or args.auto or args.framework):
-            if not CREWAI_AVAILABLE and not AUTOGEN_AVAILABLE:
+            if not CREWAI_AVAILABLE and not AUTOGEN_AVAILABLE and not PRAISONAI_AVAILABLE:
                 print("[red]ERROR: No framework is installed. Please install at least one framework:[/red]")
                 print("\npip install \"praisonai\\[crewai]\"  # For CrewAI")
                 print("pip install \"praisonai\\[autogen]\"  # For AutoGen")
                 print("pip install \"praisonai\\[crewai,autogen]\"  # For both frameworks\n")
+                print("pip install praisonaiagents # For PraisonAIAgents\n")  
                 sys.exit(1)
 
+        # Handle direct prompt if command is not a special command or file
+        if args.command and not args.command.endswith('.yaml') and args.command not in special_commands:
+            args.direct_prompt = args.command
+            args.command = None
+
         return args
+
+    def handle_direct_prompt(self, prompt):
+        """
+        Handle direct prompt by creating a single agent and running it.
+        """
+        if PRAISONAI_AVAILABLE:
+            agent_config = {
+                "name": "DirectAgent",
+                "role": "Assistant",
+                "goal": "Complete the given task",
+                "backstory": "You are a helpful AI assistant"
+            }
+            
+            # Add llm if specified
+            if hasattr(self, 'args') and self.args.llm:
+                agent_config["llm"] = self.args.llm
+            
+            agent = PraisonAgent(**agent_config)
+            result = agent.start(prompt)
+            return ""
+        elif CREWAI_AVAILABLE:
+            agent_config = {
+                "name": "DirectAgent",
+                "role": "Assistant",
+                "goal": "Complete the given task",
+                "backstory": "You are a helpful AI assistant"
+            }
+            
+            # Add llm if specified
+            if hasattr(self, 'args') and self.args.llm:
+                agent_config["llm"] = self.args.llm
+            
+            agent = Agent(**agent_config)
+            task = Task(
+                description=prompt,
+                agent=agent
+            )
+            crew = Crew(
+                agents=[agent],
+                tasks=[task]
+            )
+            return crew.kickoff()
+        elif AUTOGEN_AVAILABLE:
+            config_list = self.config_list
+            # Add llm if specified
+            if hasattr(self, 'args') and self.args.llm:
+                config_list[0]['model'] = self.args.llm
+                
+            assistant = autogen.AssistantAgent(
+                name="DirectAgent",
+                llm_config={"config_list": config_list}
+            )
+            user_proxy = autogen.UserProxyAgent(
+                name="UserProxy",
+                code_execution_config={"work_dir": "coding"}
+            )
+            user_proxy.initiate_chat(assistant, message=prompt)
+            return "Task completed"
+        else:
+            print("[red]ERROR: No framework is installed. Please install at least one framework:[/red]")
+            print("\npip install \"praisonai\\[crewai]\"  # For CrewAI")
+            print("pip install \"praisonai\\[autogen]\"  # For AutoGen")
+            print("pip install \"praisonai\\[crewai,autogen]\"  # For both frameworks\n")
+            print("pip install praisonaiagents # For PraisonAIAgents\n")  
+            sys.exit(1)
 
     def create_chainlit_chat_interface(self):
         """
@@ -389,16 +495,8 @@ class PraisonAI:
             import praisonai
             os.environ["CHAINLIT_PORT"] = "8084"
             root_path = os.path.join(os.path.expanduser("~"), ".praison")
-            os.environ["CHAINLIT_APP_ROOT"] = root_path
-            public_folder = os.path.join(os.path.dirname(praisonai.__file__), 'public')
-            if not os.path.exists(os.path.join(root_path, "public")):
-                if os.path.exists(public_folder):
-                    shutil.copytree(public_folder, os.path.join(root_path, "public"), dirs_exist_ok=True)
-                    logging.info("Public folder copied successfully!")
-                else:
-                    logging.info("Public folder not found in the package.")
-            else:
-                logging.info("Public folder already exists.")
+            if "CHAINLIT_APP_ROOT" not in os.environ:
+                os.environ["CHAINLIT_APP_ROOT"] = root_path
             chat_ui_path = os.path.join(os.path.dirname(praisonai.__file__), 'ui', 'chat.py')
             chainlit_run([chat_ui_path])
         else:
@@ -412,7 +510,8 @@ class PraisonAI:
             import praisonai
             os.environ["CHAINLIT_PORT"] = "8086"
             root_path = os.path.join(os.path.expanduser("~"), ".praison")
-            os.environ["CHAINLIT_APP_ROOT"] = root_path
+            if "CHAINLIT_APP_ROOT" not in os.environ:
+                os.environ["CHAINLIT_APP_ROOT"] = root_path
             public_folder = os.path.join(os.path.dirname(__file__), 'public')
             if not os.path.exists(os.path.join(root_path, "public")):
                 if os.path.exists(public_folder):
@@ -468,7 +567,7 @@ class PraisonAI:
                     logging.info("Public folder not found in the package.")
             else:
                 logging.info("Public folder already exists.")
-            chainlit_ui_path = os.path.join(os.path.dirname(praisonai.__file__), 'chainlit_ui.py')
+            chainlit_ui_path = os.path.join(os.path.dirname(praisonai.__file__), 'ui', 'agents.py')
             chainlit_run([chainlit_ui_path])
         else:
             print("ERROR: Chainlit is not installed. Please install it with 'pip install \"praisonai[ui]\"' to use the UI.")
@@ -481,7 +580,8 @@ class PraisonAI:
             import praisonai
             os.environ["CHAINLIT_PORT"] = "8088"
             root_path = os.path.join(os.path.expanduser("~"), ".praison")
-            os.environ["CHAINLIT_APP_ROOT"] = root_path
+            if "CHAINLIT_APP_ROOT" not in os.environ:
+                os.environ["CHAINLIT_APP_ROOT"] = root_path
             public_folder = os.path.join(os.path.dirname(praisonai.__file__), 'public')
             if not os.path.exists(os.path.join(root_path, "public")):
                 if os.path.exists(public_folder):

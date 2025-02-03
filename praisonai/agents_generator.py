@@ -20,6 +20,13 @@ CREWAI_AVAILABLE = False
 AUTOGEN_AVAILABLE = False
 PRAISONAI_TOOLS_AVAILABLE = False
 AGENTOPS_AVAILABLE = False
+PRAISONAI_AVAILABLE = False
+
+try:
+    from praisonaiagents import Agent as PraisonAgent, Task as PraisonTask, PraisonAIAgents
+    PRAISONAI_AVAILABLE = True
+except ImportError:
+    pass
 
 try:
     from crewai import Agent, Task, Crew
@@ -37,11 +44,14 @@ except ImportError:
 try:
     import agentops
     AGENTOPS_AVAILABLE = True
+    AGENTOPS_API_KEY = os.getenv("AGENTOPS_API_KEY")
+    if not AGENTOPS_API_KEY:
+        AGENTOPS_AVAILABLE = False
 except ImportError:
     pass
 
 # Only try to import praisonai_tools if either CrewAI or AutoGen is available
-if CREWAI_AVAILABLE or AUTOGEN_AVAILABLE:
+if CREWAI_AVAILABLE or AUTOGEN_AVAILABLE or PRAISONAI_AVAILABLE:
     try:
         from praisonai_tools import (
             CodeDocsSearchTool, CSVSearchTool, DirectorySearchTool, DOCXSearchTool, DirectoryReadTool,
@@ -115,6 +125,8 @@ class AgentsGenerator:
             raise ImportError("CrewAI is not installed. Please install it with 'pip install praisonai[crewai]'")
         elif framework == "autogen" and not AUTOGEN_AVAILABLE:
             raise ImportError("AutoGen is not installed. Please install it with 'pip install praisonai[autogen]'")
+        elif framework == "praisonai" and not PRAISONAI_AVAILABLE:
+            raise ImportError("PraisonAI is not installed. Please install it with 'pip install praisonaiagents'")
 
     def is_function_or_decorated(self, obj):
         """
@@ -188,6 +200,47 @@ class AgentsGenerator:
                     tools_dict[name] = obj
         return tools_dict
 
+    def load_tools_from_tools_py(self):
+        """
+        Imports and returns all contents from tools.py file.
+        Also adds the tools to the global namespace.
+
+        Returns:
+            list: A list of callable functions with proper formatting
+        """
+        tools_list = []
+        try:
+            # Try to import tools.py from current directory
+            spec = importlib.util.spec_from_file_location("tools", "tools.py")
+            self.logger.debug(f"Spec: {spec}")
+            if spec is None:
+                self.logger.debug("tools.py not found in current directory")
+                return tools_list
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # Get all module attributes except private ones and classes
+            for name, obj in inspect.getmembers(module):
+                if (not name.startswith('_') and 
+                    callable(obj) and 
+                    not inspect.isclass(obj)):
+                    # Add the function to global namespace
+                    globals()[name] = obj
+                    # Add to tools list
+                    tools_list.append(obj)
+                    self.logger.debug(f"Loaded and globalized tool function: {name}")
+
+            self.logger.debug(f"Loaded {len(tools_list)} tool functions from tools.py")
+            self.logger.debug(f"Tools list: {tools_list}")
+            
+        except FileNotFoundError:
+            self.logger.debug("tools.py not found in current directory")
+        except Exception as e:
+            self.logger.warning(f"Error loading tools from tools.py: {e}")
+            
+        return tools_list
+
     def generate_crew_and_kickoff(self):
         """
         Generates a crew of agents and initiates tasks based on the provided configuration.
@@ -221,7 +274,7 @@ class AgentsGenerator:
         tools_dict = {}
         
         # Only try to use praisonai_tools if it's available and needed
-        if PRAISONAI_TOOLS_AVAILABLE and (CREWAI_AVAILABLE or AUTOGEN_AVAILABLE):
+        if PRAISONAI_TOOLS_AVAILABLE and (CREWAI_AVAILABLE or AUTOGEN_AVAILABLE or PRAISONAI_AVAILABLE):
             tools_dict = {
                 'CodeDocsSearchTool': CodeDocsSearchTool(),
                 'CSVSearchTool': CSVSearchTool(),
@@ -259,20 +312,26 @@ class AgentsGenerator:
         elif tools_dir_path.is_dir():
             tools_dict.update(self.load_tools_from_module_class(tools_dir_path))
             self.logger.debug("tools folder exists in the root directory")
-        
+
         framework = self.framework or config.get('framework')
 
         if framework == "autogen":
             if not AUTOGEN_AVAILABLE:
                 raise ImportError("AutoGen is not installed. Please install it with 'pip install praisonai[autogen]'")
             if AGENTOPS_AVAILABLE:
-                agentops.init(os.environ.get("AGENTOPS_API_KEY"), tags=["autogen"])
+                agentops.init(os.environ.get("AGENTOPS_API_KEY"), default_tags=["autogen"])
             return self._run_autogen(config, topic, tools_dict)
+        elif framework == "praisonai":
+            if not PRAISONAI_AVAILABLE:
+                raise ImportError("PraisonAI is not installed. Please install it with 'pip install praisonaiagents'")
+            if AGENTOPS_AVAILABLE:
+                agentops.init(os.environ.get("AGENTOPS_API_KEY"), default_tags=["praisonai"])
+            return self._run_praisonai(config, topic, tools_dict)
         else:  # framework=crewai
             if not CREWAI_AVAILABLE:
                 raise ImportError("CrewAI is not installed. Please install it with 'pip install praisonai[crewai]'")
             if AGENTOPS_AVAILABLE:
-                agentops.init(os.environ.get("AGENTOPS_API_KEY"), tags=["crewai"])
+                agentops.init(os.environ.get("AGENTOPS_API_KEY"), default_tags=["crewai"])
             return self._run_crewai(config, topic, tools_dict)
 
     def _run_autogen(self, config, topic, tools_dict):
@@ -472,3 +531,118 @@ class AgentsGenerator:
             
         return result
 
+    def _run_praisonai(self, config, topic, tools_dict):
+        """
+        Run agents using the PraisonAI framework.
+        """
+        agents = {}
+        tasks = []
+        tasks_dict = {}
+
+        # Load tools once at the beginning
+        tools_list = self.load_tools_from_tools_py()
+        self.logger.debug(f"Loaded tools: {tools_list}")
+
+        # Create agents from config
+        for role, details in config['roles'].items():
+            role_filled = details['role'].format(topic=topic)
+            goal_filled = details['goal'].format(topic=topic)
+            backstory_filled = details['backstory'].format(topic=topic)
+            
+            # Pass all loaded tools to the agent
+            agent = PraisonAgent(
+                name=role_filled,
+                role=role_filled,
+                goal=goal_filled,
+                backstory=backstory_filled,
+                tools=tools_list,  # Pass the entire tools list to the agent
+                allow_delegation=details.get('allow_delegation', False),
+                llm=details.get('llm', {}).get("model", os.environ.get("MODEL_NAME", "gpt-4o")),
+                function_calling_llm=details.get('function_calling_llm', {}).get("model", os.environ.get("MODEL_NAME", "gpt-4o")),
+                max_iter=details.get('max_iter', 15),
+                max_rpm=details.get('max_rpm'),
+                max_execution_time=details.get('max_execution_time'),
+                verbose=details.get('verbose', True),
+                cache=details.get('cache', True),
+                system_template=details.get('system_template'),
+                prompt_template=details.get('prompt_template'),
+                response_template=details.get('response_template'),
+                reflect_llm=details.get('reflect_llm', {}).get("model", os.environ.get("MODEL_NAME", "gpt-4o")),
+                min_reflect=details.get('min_reflect', 1),
+                max_reflect=details.get('max_reflect', 3),
+            )
+            
+            if self.agent_callback:
+                agent.step_callback = self.agent_callback
+
+            agents[role] = agent
+            self.logger.debug(f"Created agent {role_filled} with tools: {agent.tools}")
+
+            # Create tasks for the agent
+            for task_name, task_details in details.get('tasks', {}).items():
+                description_filled = task_details['description'].format(topic=topic)
+                expected_output_filled = task_details['expected_output'].format(topic=topic)
+
+                task = PraisonTask(
+                    description=description_filled,
+                    expected_output=expected_output_filled,
+                    agent=agent,
+                    tools=tools_list,  # Pass the same tools list to the task
+                    async_execution=task_details.get('async_execution', False),
+                    context=[],
+                    config=task_details.get('config', {}),
+                    output_json=task_details.get('output_json'),
+                    output_pydantic=task_details.get('output_pydantic'),
+                    output_file=task_details.get('output_file', ""),
+                    callback=task_details.get('callback'),
+                    create_directory=task_details.get('create_directory', False)
+                )
+
+                self.logger.debug(f"Created task {task_name} with tools: {task.tools}")
+                
+                if self.task_callback:
+                    task.callback = self.task_callback
+
+                tasks.append(task)
+                tasks_dict[task_name] = task
+
+        # Set up task contexts
+        for role, details in config['roles'].items():
+            for task_name, task_details in details.get('tasks', {}).items():
+                task = tasks_dict[task_name]
+                context_tasks = [tasks_dict[ctx] for ctx in task_details.get('context', []) 
+                            if ctx in tasks_dict]
+                task.context = context_tasks
+
+        # Create and run the PraisonAI agents
+        memory = config.get('memory', False)
+        self.logger.debug(f"Memory: {memory}")
+        if config.get('process') == 'hierarchical':
+            agents = PraisonAIAgents(
+                agents=list(agents.values()),
+                tasks=tasks,
+                verbose=True,
+                process="hierarchical",
+                manager_llm=config.get('manager_llm', 'gpt-4o'),
+                memory=memory
+            )
+        else:
+            agents = PraisonAIAgents(
+                agents=list(agents.values()),
+                tasks=tasks,
+                verbose=2,
+                memory=memory
+            )
+
+        self.logger.debug("Final Configuration:")
+        self.logger.debug(f"Agents: {agents.agents}")
+        self.logger.debug(f"Tasks: {agents.tasks}")
+
+        response = agents.start()
+        self.logger.debug(f"Result: {response}")
+        result = ""
+        
+        if AGENTOPS_AVAILABLE:
+            agentops.end_session("Success")
+            
+        return result

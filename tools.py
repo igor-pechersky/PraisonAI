@@ -1,5 +1,52 @@
 # tools.py
 
+from duckduckgo_search import DDGS
+
+def search_tool(query: str) -> list:
+    """
+    Perform a web search using DuckDuckGo and return relevant results.
+
+    Args:
+        query (str): The search query string to look up information about.
+
+    Returns:
+        list: A list of dictionaries containing search results with the following keys:
+            - title (str): The title of the search result
+            - url (str): The URL of the search result
+            - snippet (str): A brief excerpt or description of the search result
+    """
+    try:
+        results = []
+        ddgs = DDGS()
+        for result in ddgs.text(keywords=query, max_results=10):
+            results.append({
+                "title": result.get("title", ""),
+                "url": result.get("href", ""),
+                "snippet": result.get("body", ""),
+            })
+        return results
+
+    except Exception as e:
+        print(f"Error during DuckDuckGo search: {e}")
+        return []
+
+# # Define tools
+# search_tool = {
+#     "type": "function",
+#     "function": {
+#         "name": "search_tool",
+#         "description": "Use this to perform search queries",
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "query": {"type": "string"},
+#             },
+#             "required": ["query"],
+#         },
+#     },
+# }
+
+
 # from duckduckgo_search import DDGS
 # from praisonai_tools import BaseTool
 # class InternetSearchTool(BaseTool):
